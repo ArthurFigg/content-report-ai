@@ -5,6 +5,7 @@ description = "Relatório semanal de performance de conteúdo do Instagram com i
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "sqlalchemy>=2.0,<3.0",
+    "pandas>=2.0,<3.0",
 ]
 
 [dependency-groups]

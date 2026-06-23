@@ -52,3 +52,8 @@ Lê e valida um CSV semanal, calcula as métricas determinísticas da semana (to
 - Exceções de validação usam tipo específico de domínio (ex: `CSVInvalidoError`), não exceções genéricas — conforme regra global do projeto ("nunca `except Exception: pass`", exceções específicas do domínio)
 - **[Correção do `/spec-review`]** Adicionado o cálculo de `melhor_taxa_engajamento_post` ao comportamento desta spec — já estava decidido no CLAUDE.md e consumido pelo payload de `04_ia_gemini`, mas não estava coberto aqui, gerando uma dependência implícita sem referência cruzada
 - **[Correção do `/spec-review`]** Adicionada dependência de `02_gerador_dados_sinteticos` — `leitor_csv.py` assume o formato de CSV (vírgula, datas ISO) definido naquela spec
+- `leitor_csv.py` produz `PostValidado` (dataclass próprio de `ingestao/`), não o `DadosPost` de `persistencia/modelos.py` — mantém ingestão e persistência desacopladas; a adaptação entre os dois formatos é responsabilidade do `watcher.py` (spec `07_watcher`)
+- `comparacao.py` recebe `TotaisAnteriores` (dataclass próprio, só com `reach_total`/`engajamento_total`), não o `ResumoSemanal` de `persistencia/modelos.py` — pelo mesmo motivo: função pura sem depender do schema do banco
+
+---
+**Status:** concluida em 2026-06-22

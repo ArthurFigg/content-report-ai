@@ -1,0 +1,2 @@
+class CSVInvalidoError(Exception):
+    pass

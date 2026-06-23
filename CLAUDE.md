@@ -244,8 +244,7 @@ Se os campos da IA estiverem marcados como indisponíveis (falha persistente da 
 Decisões tomadas no setup inicial (antes de implementar a spec `01_persistencia`):
 
 - **Python 3.12** — escolhido sobre o 3.14 (instalado localmente) e sobre o 3.13 disponível via `uv`. Dependências que só entram em specs futuras (`matplotlib`, `xhtml2pdf`, em `05_relatorio_pdf`) têm histórico de suporte mais maduro em 3.12 do que em releases recentes; evita risco de incompatibilidade descoberto tarde.
-- **Dependências de produção**: só `sqlalchemy>=2.0,<3.0` — é a única exigida pela spec `01_persistencia` (ver "Módulos afetados" da spec: `modelos.py` via SQLAlchemy). Demais dependências da stack ficam de fora até a spec correspondente ser implementada:
-  - `pandas` → spec `03_ingestao_e_metricas`
+- **Dependências de produção**: `sqlalchemy>=2.0,<3.0` (spec `01_persistencia`) e `pandas>=2.0,<3.0` (adicionada na spec `03_ingestao_e_metricas`, usada em `calculo_metricas.py`). Demais dependências da stack ficam de fora até a spec correspondente ser implementada:
   - `google-genai` → spec `04_ia_gemini`
   - `xhtml2pdf`, `jinja2`, `matplotlib` → spec `05_relatorio_pdf`
   - `watchdog` → spec `07_watcher`
