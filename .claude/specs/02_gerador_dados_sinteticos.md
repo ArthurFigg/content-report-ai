@@ -50,3 +50,6 @@ Gera 4 arquivos CSV sintéticos (~1 mês, 1 por semana) no formato definido em "
 - Distribuição de Post Type: 40% Reel, 35% Photo, 15% Carousel, 10% Video
 - Legendas: banco fixo de frases genéricas em português, sorteadas
 - Seed fixa (reprodutibilidade); reexecução sobrescreve os arquivos sem checagem prévia
+
+---
+**Status:** concluida em 2026-06-22
