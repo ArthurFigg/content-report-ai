@@ -23,10 +23,11 @@ Este projeto fecha uma lacuna de portfólio: os projetos anteriores automatizam 
 
 - **Linguagem**: Python
 - **Processamento de dados**: pandas
-- **IA**: Gemini API, com structured output (schema JSON forçado, não apenas instrução textual)
+- **IA**: Gemini API via SDK `google-genai` (SDK unificado atual do Google), com structured output (`response_schema` via Pydantic + `response_mime_type="application/json"`, schema forçado, não apenas instrução textual). Modelo configurável via `GEMINI_MODEL` (`.env`, com valor padrão no código) — nomes de modelo Gemini mudam com frequência, por isso não é fixado aqui. Chave via `GEMINI_API_KEY` (`.env`).
 - **Banco**: SQLite
-- **Geração de PDF**: xhtml2pdf + Jinja2 (template HTML/CSS) + matplotlib (gráfico embutido como imagem) — escolhido no lugar de WeasyPrint por não depender de bibliotecas nativas GTK/Pango, que não funcionam out-of-the-box no Windows
-- **Envio de email**: smtplib + email.mime (anexo)
+- **Geração de PDF**: xhtml2pdf + Jinja2 (template HTML/CSS) + matplotlib (gráfico embutido como imagem, **gráfico de linha com marcador por semana** — padrão de mercado para tendência ao longo do tempo) — xhtml2pdf escolhido no lugar de WeasyPrint por não depender de bibliotecas nativas GTK/Pango, que não funcionam out-of-the-box no Windows
+- **Envio de email**: smtplib + email.mime (anexo), especificamente Gmail (`smtp.gmail.com:465` via `smtplib.SMTP_SSL`), autenticando com `SMTP_USER` + `SMTP_PASSWORD` (senha de app, `.env`)
+- **Retry com backoff**: módulo compartilhado `src/retry.py` (3 tentativas, 2s/4s/8s), reutilizado por `cliente_gemini.py` e `email_sender.py` — evita duplicar a mesma lógica nos dois lugares
 - **Disparo por evento**: watchdog (observa a pasta de entrada)
 - **Testes**: pytest (seguindo o padrão já usado em outros projetos do portfólio)
 - **Gerenciador de dependências**: `uv` + `pyproject.toml` (alinhado à regra global — sem `requirements.txt` avulso)
@@ -49,6 +50,7 @@ relatorio_conteudo/
 ├── src/
 │   ├── __init__.py
 │   ├── watcher.py            # observa a pasta, dispara o pipeline ao detectar CSV novo
+│   ├── retry.py              # retry com backoff exponencial compartilhado (cliente_gemini.py, email_sender.py)
 │   ├── ingestao/
 │   │   ├── __init__.py
 │   │   └── leitor_csv.py     # lê e valida o CSV no formato Meta Business Suite
@@ -121,7 +123,7 @@ O sistema deve lidar corretamente com campos vazios/não aplicáveis dependendo 
 
 ### Validação do CSV
 
-`leitor_csv.py` valida colunas obrigatórias (Post ID, Post Date, Post Type, Reach, Impressions, Likes and Reactions, Comments, Shares, Saves) e tipos básicos antes de seguir. Se a validação falhar (coluna obrigatória faltando, tipo inválido, arquivo corrompido), rejeita o arquivo inteiro: loga o erro específico (qual coluna/linha) e aborta o pipeline para aquele arquivo, sem inserir nada no banco e **sem mover** o arquivo da pasta de entrada (fica em `dados/entrada/` para o usuário corrigir e o watcher não tenta reprocessar sozinho, pois não há novo evento de criação). Se o processamento for bem-sucedido, o CSV é movido para `dados/processados/`.
+`leitor_csv.py` valida colunas obrigatórias (Post ID, Post Date, Post Type, Reach, Impressions, Likes and Reactions, Comments, Shares, Saves) e tipos básicos antes de seguir. "Tipos básicos" inclui: Post Date parseável como data válida; Post Type dentro do enum {Photo, Video, Reel, Carousel}; valores numéricos (Reach, Impressions, Likes and Reactions, Comments, Shares, Saves, Link Clicks quando presente) não-negativos; Post ID único dentro do próprio arquivo; e pelo menos 1 linha de dados (CSV com cabeçalho mas zero posts é inválido). Se a validação falhar por qualquer um desses motivos (coluna obrigatória faltando, tipo inválido, Post Type fora do enum, valor negativo, Post ID duplicado no arquivo, zero linhas, arquivo corrompido), rejeita o arquivo inteiro: loga o erro específico (qual coluna/linha) e aborta o pipeline para aquele arquivo, sem inserir nada no banco e **sem mover** o arquivo da pasta de entrada (fica em `dados/entrada/` para o usuário corrigir e o watcher não tenta reprocessar sozinho, pois não há novo evento de criação). Se o processamento for bem-sucedido, o CSV é movido para `dados/processados/`.
 
 ### Resiliência a falha não prevista
 
@@ -154,6 +156,10 @@ O post com a maior `taxa_engajamento` da semana é identificado por `calculo_met
 
 A variação percentual (semana atual vs. anterior) é calculada apenas para **Reach total** e **Engajamento total**. A taxa de engajamento semanal não tem variação própria — é derivada das outras duas, então uma terceira variação seria redundante.
 
+`repositorio.listar_resumos_semanais()` retorna todas as semanas já salvas (`semana`, `reach_total`), ordenadas — usada por `grafico.py` para montar a evolução de múltiplas semanas (diferente de `buscar_resumo_anterior()`, que retorna só a mais recente).
+
+**Atomicidade**: a inserção dos posts (`inserir_posts`) e o salvamento do resumo semanal (`salvar_resumo_semanal`) ocorrem dentro de uma única transação de banco, que só abre **depois** que a chamada à IA (com todos os retries) já terminou — nunca durante a chamada de rede externa. Se qualquer exceção ocorrer entre as duas operações, a transação é revertida por completo: nenhum post nem resumo daquela semana fica persistido, evitando posts "órfãos" sem resumo correspondente em caso de falha no meio do processamento.
+
 ### Idempotência
 
 Antes de inserir, `repositorio.py` verifica se já existe um resumo para aquele identificador de semana. Se já existir, o pipeline **rejeita o arquivo**: loga um aviso claro, não insere posts duplicados, não recalcula o resumo e não reenvia email. Não há reprocessamento automático — se o usuário precisar corrigir uma semana já processada, isso é tratado fora do escopo do MVP (intervenção manual no banco).
@@ -164,13 +170,13 @@ Antes de inserir, `repositorio.py` verifica se já existe um resumo para aquele 
 2. `watcher.py` (watchdog) detecta o arquivo novo e dispara o pipeline
 3. `leitor_csv.py` lê e valida o CSV (ver "Validação do CSV" acima) — se inválido, aborta e loga
 4. Identifica a semana pelo nome do arquivo e checa idempotência (ver "Idempotência" acima) — se já processada, rejeita e loga
-5. `calculo_metricas.py` calcula totais, médias, melhor/pior post da semana (por Reach) e taxa de engajamento por post e agregada da semana (pandas)
-6. `repositorio.py` insere os posts em `posts` e busca o resumo da semana anterior em `resumos_semanais`
+5. `calculo_metricas.py` calcula totais, médias, melhor/pior post da semana (por Reach), o post com maior taxa de engajamento, e taxa de engajamento por post e agregada da semana (pandas)
+6. `repositorio.buscar_resumo_anterior()` busca o resumo da semana anterior em `resumos_semanais` (leitura simples, fora de transação)
 7. `comparacao.py` calcula variação percentual de Reach total e de Engajamento total (ou identifica que é a primeira semana, sem histórico)
 8. Um payload pequeno (totais + variação, ou só totais se for a primeira semana) é montado e enviado para a IA via `cliente_gemini.py`, usando o prompt de `prompt.py` e o schema de structured output. Em caso de falha (timeout, rate limit, erro de API), tenta novamente com backoff exponencial (3 tentativas: 2s, 4s, 8s); se persistir, segue o pipeline com os campos de IA marcados como indisponíveis no relatório
 9. A IA retorna o JSON: `resumo_executivo`, `destaques`, `possivel_causa` (ou `null` na primeira semana), `recomendacao`
-10. `repositorio.py` salva o novo resumo semanal em `resumos_semanais` (vira "anterior" na próxima rodada)
-11. `grafico.py` gera a imagem da evolução do Reach total ao longo das semanas já salvas
+10. **Transação única e breve** (só agora, depois da IA já ter respondido ou falhado definitivamente): `repositorio.inserir_posts()` insere os posts em `posts` e `repositorio.salvar_resumo_semanal()` salva o novo resumo em `resumos_semanais` (vira "anterior" na próxima rodada) — ver "Atomicidade" em "Esquema do banco"
+11. `grafico.py` gera a imagem da evolução do Reach total ao longo das semanas já salvas, usando `repositorio.listar_resumos_semanais()` (fora da transação de escrita)
 12. `gerador_pdf.py` monta o HTML (Jinja2) com cabeçalho (usando `NOME_NEGOCIO` do `.env`) → resumo executivo → números-chave → gráfico → destaques → possível causa → recomendação, converte para PDF via xhtml2pdf e salva em `relatorios/relatorio_<semana>.pdf`
 13. `email_sender.py` envia o PDF por email, anexado, para `EMAIL_DESTINATARIO` (variável de ambiente). Em caso de falha de envio (SMTP), tenta novamente com backoff exponencial (3 tentativas: 2s, 4s, 8s); se persistir, loga o erro — o PDF já está salvo em `relatorios/` desde o passo 12, disponível para envio manual posterior
 
@@ -225,15 +231,17 @@ Responda seguindo exatamente o schema fornecido.
 
 1. Cabeçalho — nome do perfil/negócio (fictício, vem de `NOME_NEGOCIO` no `.env`), período da semana
 2. Resumo executivo (IA) — destaque, logo após o cabeçalho
-3. Números-chave (Python/pandas) — cards com Reach total, Engajamento total, Taxa de engajamento semanal, variação % de Reach e variação % de Engajamento
-4. Gráfico — evolução do Reach total ao longo das semanas (consistente com o critério de melhor/pior post), posicionado aqui (não no fim) para reforçar visualmente o resumo executivo
+3. Números-chave (Python/pandas) — cards com Reach total, Engajamento total, Taxa de engajamento semanal, variação % de Reach e variação % de Engajamento. Se a variação for `null` (semana anterior com valor 0), o card exibe "sem base de comparação" no lugar do número.
+4. Gráfico — evolução do Reach total ao longo das semanas (consistente com o critério de melhor/pior post), **em formato de linha com marcador por semana** (padrão de mercado para tendência ao longo do tempo), posicionado aqui (não no fim) para reforçar visualmente o resumo executivo. Imagem embutida como base64/data URI, sem arquivo temporário em disco. Com menos de 2 semanas de histórico, o bloco exibe "Histórico insuficiente para mostrar evolução — disponível a partir da 2ª semana" em vez do gráfico.
 5. Destaques (IA) — lista curta (melhor post por Reach, melhor post por taxa de engajamento, queda notável)
-6. Possível causa (IA) — rotulada como "possível explicação", separada visualmente para não parecer fato absoluto
+6. Possível causa (IA) — rotulada como "possível explicação", separada visualmente para não parecer fato absoluto. Omitida inteiramente quando `possivel_causa` for `null` (sempre o caso na primeira semana).
 7. Recomendação (IA) — destacada em caixa/negrito
+
+Se os campos da IA estiverem marcados como indisponíveis (falha persistente da Gemini), os blocos 2, 5, 6 e 7 exibem uma mensagem de indisponibilidade (ex: "Resumo indisponível nesta semana") no lugar do conteúdo da IA — os números-chave (bloco 3) e o gráfico (bloco 4) continuam normais, pois são calculados em Python, não pela IA.
 
 ## Primeiros passos de desenvolvimento
 
-1. Montar a estrutura de pastas e ambiente (`uv`, `pyproject.toml`, `.env.example` com chave da Gemini API, credenciais SMTP, `EMAIL_DESTINATARIO` e `NOME_NEGOCIO`)
+1. Montar a estrutura de pastas e ambiente (`uv`, `pyproject.toml`, `.env.example` com `GEMINI_API_KEY`, `GEMINI_MODEL`, `SMTP_USER`, `SMTP_PASSWORD`, `EMAIL_DESTINATARIO` e `NOME_NEGOCIO`)
 2. Escrever `ferramentas_dev/gerador_dados_sinteticos.py` e gerar os 4 CSVs de teste (~1 mês), seguindo a convenção de nome `semana_AAAA-MM-DD.csv`
 3. Implementar `leitor_csv.py` + `calculo_metricas.py` (melhor/pior post por Reach, engajamento total, taxa de engajamento por post e semanal), com testes (pytest) usando os CSVs sintéticos, incluindo casos de CSV inválido
 4. Implementar o esquema do banco (`modelos.py`, `repositorio.py`, incluindo as colunas `taxa_engajamento` e `taxa_engajamento_semanal`) e testar inserção/consulta de posts e resumos semanais, incluindo o caso de idempotência (semana já processada)
