@@ -43,3 +43,7 @@ Define o esquema do banco SQLite (tabelas `posts` e `resumos_semanais`) e a cama
 - ORM: SQLAlchemy, tipos genéricos, `create_all` no startup, sem Alembic (regra global do projeto para SQLite em desenvolvimento)
 - Colisão de `post_id` entre semanas (erro de integridade) não tem tratamento especial em `repositorio.py` — propaga para a resiliência genérica já definida no `watcher.py`
 - **[Nota do `/spec-review`]** A spec `07_watcher` identificou duas extensões pontuais necessárias em `repositorio.py`, ainda não cobertas aqui: (1) suporte a transação compartilhada entre `inserir_posts` e `salvar_resumo_semanal`; (2) uma função `listar_resumos_semanais()` (retorna todas as semanas já salvas, ordenadas, com `semana` e `reach_total`) — necessária para `grafico.py` (spec `05_relatorio_pdf`) montar a evolução de múltiplas semanas, já que `buscar_resumo_anterior()` retorna só o registro mais recente. Ambas devem ser implementadas junto com `07_watcher`.
+- Coluna `semana` adicionada à tabela `posts` (string, não-PK, índice simples) — decisão tomada durante a implementação: o parâmetro `semana` em `inserir_posts(posts, semana)` precisava ser persistido para permitir consultar todos os posts de uma semana sem re-derivar de `Post Date`. CLAUDE.md ("Esquema do banco") atualizado para refletir essa coluna.
+
+---
+**Status:** concluida em 2026-06-22

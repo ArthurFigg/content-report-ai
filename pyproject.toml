@@ -1,0 +1,19 @@
+[project]
+name = "content-report-ai"
+version = "0.1.0"
+description = "Relatório semanal de performance de conteúdo do Instagram com insight automático via IA"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "sqlalchemy>=2.0,<3.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0,<9.0",
+]
+
+[tool.ruff]
+line-length = 88
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
