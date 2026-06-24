@@ -15,7 +15,7 @@ Gera a imagem do gráfico de linha da evolução do Reach total, monta o HTML do
 - Números formatados com separador de milhar (padrão pt-BR).
 - Card de variação % exibe "sem base de comparação" no lugar do número quando a variação calculada for `null` (semana anterior com valor 0).
 - Bloco "Possível causa" é omitido inteiramente quando `possivel_causa` for `null` (sempre o caso na primeira semana, por definição do schema da IA).
-- Se os campos da IA estiverem marcados como indisponíveis (falha persistente da Gemini, definida em `04_ia_gemini`), os blocos de Resumo executivo, Destaques, Possível causa e Recomendação exibem "Resumo indisponível nesta semana" (ou equivalente por bloco) no lugar do conteúdo da IA — os números-chave e o gráfico continuam normais, pois são calculados em Python, não pela IA.
+- Se `gerador_pdf.py` receber `resposta_ia=None` (contrato de falha persistente definido em `04_ia_gemini`: `gerar_interpretacao()` retorna `None`), os blocos de Resumo executivo, Destaques, Possível causa e Recomendação exibem "Resumo indisponível nesta semana" (ou equivalente por bloco) no lugar do conteúdo da IA — os números-chave e o gráfico continuam normais, pois são calculados em Python, não pela IA.
 - `gerador_pdf.py` converte o HTML final em PDF via xhtml2pdf e salva em `relatorios/relatorio_<semana>.pdf`, criando a pasta `relatorios/` automaticamente se não existir.
 
 ## Critérios verificáveis
@@ -46,3 +46,4 @@ Gera a imagem do gráfico de linha da evolução do Reach total, monta o HTML do
 - **[Correção do `/spec-review`]** A lista de histórico para o gráfico vem de `repositorio.listar_resumos_semanais()`, uma função que ainda não existia na spec `01_persistencia` original — registrada como extensão pontual lá e em `07_watcher`
 - Números formatados em padrão pt-BR (separador de milhar)
 - Pasta `relatorios/` é criada automaticamente se não existir
+- **[Correção do `/spec-review`]** `gerador_pdf.py` recebe `resposta_ia: RespostaIA | None` (tipo definido em `04_ia_gemini`) — `None` já é o próprio sinal de indisponibilidade, sem campo ou wrapper intermediário; `watcher.py` passa o retorno de `gerar_interpretacao()` direto, sem tradução

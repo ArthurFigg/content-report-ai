@@ -18,6 +18,8 @@ Orquestra o pipeline completo — vigia a pasta de entrada, dispara o processame
 - Se a semana já foi processada (idempotência): loga aviso, não insere nada, não reenvia email, não move o arquivo, segue.
 - Se qualquer exceção não prevista ocorrer durante o processamento de um arquivo: loga o traceback completo em ERROR, não move o arquivo, e o watcher continua vigiando a pasta normalmente (nunca derruba o processo por causa de um arquivo problemático).
 - Em caso de sucesso completo (até o email ser enviado, ou pelo menos o PDF salvo se o email falhar persistentemente), move o CSV processado para `dados/processados/`.
+- Antes de `inserir_posts`, converte cada `PostValidado` (formato de `ingestao/`) para `DadosPost` (formato de `persistencia/modelos.py`) — adaptação atribuída a `watcher.py` pela spec `03_ingestao_e_metricas`, já que os dois módulos mantêm dataclasses desacopladas de propósito. Da mesma forma, converte o `ResumoSemanal` retornado por `buscar_resumo_anterior` em `TotaisAnteriores` antes de chamar `comparacao.calcular_variacao`.
+- Se `cliente_gemini.gerar_interpretacao()` retornar `None` (falha persistente, contrato definido em `04_ia_gemini`), `watcher.py` passa `None` adiante para `gerador_pdf.py` sem tentar reformular ou repetir a chamada — `gerador_pdf.py` decide a renderização de indisponibilidade (spec `05_relatorio_pdf`).
 
 ## Critérios verificáveis
 - [ ] `uv run pytest tests/test_watcher.py -v` passa
@@ -46,3 +48,5 @@ Orquestra o pipeline completo — vigia a pasta de entrada, dispara o processame
 - Processamento de arquivos é sequencial (um por vez), nunca concorrente — simplicidade e compatibilidade com SQLite (single-writer)
 - **[Correção do `/spec-review`]** A transação de escrita (`inserir_posts` + `salvar_resumo_semanal`) só abre depois da chamada à IA, não durante — evita manter o banco com transação aberta ao longo de uma chamada de rede externa com retry (anti-padrão identificado na revisão cruzada com `01_persistencia`)
 - **[Correção do `/spec-review`]** `repositorio.py` precisa também de `listar_resumos_semanais()` (não só o suporte a transação) — `grafico.py` (spec `05_relatorio_pdf`) precisa do histórico completo de semanas, e `buscar_resumo_anterior()` só retorna a mais recente
+- **[Correção do `/spec-review`]** `watcher.py` é responsável por duas adaptações de dataclass entre camadas, atribuídas a ele por `03_ingestao_e_metricas` mas não explicitadas aqui antes: `PostValidado` → `DadosPost` (antes de `inserir_posts`) e `ResumoSemanal` → `TotaisAnteriores` (antes de `comparacao.calcular_variacao`)
+- **[Correção do `/spec-review`]** O retorno `None` de `cliente_gemini.gerar_interpretacao()` (falha persistente, `04_ia_gemini`) é propagado sem alteração para `gerador_pdf.py`, que decide a renderização de indisponibilidade (`05_relatorio_pdf`)
