@@ -7,7 +7,7 @@ from src.persistencia.modelos import DadosPost, Post, ResumoSemanal
 def inserir_posts(sessao: Session, posts: list[DadosPost], semana: str) -> None:
     for dados in posts:
         sessao.add(Post(semana=semana, **dados))
-    sessao.commit()
+    sessao.flush()
 
 
 def buscar_resumo_anterior(sessao: Session) -> ResumoSemanal | None:
@@ -41,4 +41,11 @@ def salvar_resumo_semanal(
             pior_post_id=pior_post_id,
         )
     )
-    sessao.commit()
+    sessao.flush()
+
+
+def listar_resumos_semanais(sessao: Session) -> list[tuple[str, int]]:
+    instrucao = select(ResumoSemanal.semana, ResumoSemanal.reach_total).order_by(
+        ResumoSemanal.semana
+    )
+    return [(semana, reach_total) for semana, reach_total in sessao.execute(instrucao).all()]

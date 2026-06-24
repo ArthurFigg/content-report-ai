@@ -9,6 +9,7 @@ from src.persistencia.modelos import DadosPost, Post, ResumoSemanal, criar_engin
 from src.persistencia.repositorio import (
     buscar_resumo_anterior,
     inserir_posts,
+    listar_resumos_semanais,
     salvar_resumo_semanal,
     semana_ja_processada,
 )
@@ -143,6 +144,35 @@ def test_salvar_resumo_semanal_persiste_melhor_e_pior_post_recuperaveis_via_join
     ).one()
 
     assert (melhor_post_id, pior_post_id) == ("p1", "p2")
+
+
+def test_listar_resumos_semanais_retorna_semana_e_reach_ordenados(sessao):
+    _inserir_post_simples(sessao, "p1", "2026-06-08")
+    _inserir_post_simples(sessao, "p2", "2026-06-01")
+    salvar_resumo_semanal(
+        sessao,
+        semana="2026-06-08",
+        reach_total=2000,
+        engajamento_total=200,
+        taxa_engajamento_semanal=10.0,
+        quantidade_posts=1,
+        melhor_post_id="p1",
+        pior_post_id="p1",
+    )
+    salvar_resumo_semanal(
+        sessao,
+        semana="2026-06-01",
+        reach_total=1000,
+        engajamento_total=100,
+        taxa_engajamento_semanal=10.0,
+        quantidade_posts=1,
+        melhor_post_id="p2",
+        pior_post_id="p2",
+    )
+
+    historico = listar_resumos_semanais(sessao)
+
+    assert historico == [("2026-06-01", 1000), ("2026-06-08", 2000)]
 
 
 def test_salvar_resumo_semanal_duplicado_levanta_erro_de_integridade(sessao):

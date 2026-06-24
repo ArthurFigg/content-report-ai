@@ -50,3 +50,9 @@ Orquestra o pipeline completo — vigia a pasta de entrada, dispara o processame
 - **[Correção do `/spec-review`]** `repositorio.py` precisa também de `listar_resumos_semanais()` (não só o suporte a transação) — `grafico.py` (spec `05_relatorio_pdf`) precisa do histórico completo de semanas, e `buscar_resumo_anterior()` só retorna a mais recente
 - **[Correção do `/spec-review`]** `watcher.py` é responsável por duas adaptações de dataclass entre camadas, atribuídas a ele por `03_ingestao_e_metricas` mas não explicitadas aqui antes: `PostValidado` → `DadosPost` (antes de `inserir_posts`) e `ResumoSemanal` → `TotaisAnteriores` (antes de `comparacao.calcular_variacao`)
 - **[Correção do `/spec-review`]** O retorno `None` de `cliente_gemini.gerar_interpretacao()` (falha persistente, `04_ia_gemini`) é propagado sem alteração para `gerador_pdf.py`, que decide a renderização de indisponibilidade (`05_relatorio_pdf`)
+- `inserir_posts`/`salvar_resumo_semanal` trocaram `sessao.commit()` por `sessao.flush()` (extensão pontual em `repositorio.py`); `watcher.py` envolve as duas chamadas em `with sessao.begin():`, que comita no sucesso e reverte por completo em qualquer exceção — testado com um banco SQLite em memória real (não mockado) para confirmar que nenhum post órfão fica persistido
+- `watcher.py` mantém seu próprio `_formatar_periodo()` privado, duplicando a mesma lógica de `gerador_pdf.py` — evita importar uma função privada de outro módulo só para reaproveitar 3 linhas de cálculo de data, mesmo padrão já adotado em `06_entrega_email`
+- Conversão `PostValidado → DadosPost` recalcula `taxa_engajamento` via `calculo_metricas.calcular_taxa_engajamento` (função pública reaproveitada, não duplicada) — necessário porque `MetricasSemana` só expõe os 3 posts de destaque (melhor/pior/melhor taxa), não a taxa de cada post da semana
+
+---
+**Status:** concluida em 2026-06-23
