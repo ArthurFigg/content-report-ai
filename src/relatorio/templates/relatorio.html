@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body { font-family: Helvetica, Arial, sans-serif; color: #222222; }
+  h1 { font-size: 20px; margin-bottom: 0; }
+  .periodo { color: #666666; margin-top: 4px; }
+  h2 { font-size: 15px; margin-top: 22px; border-bottom: 1px solid #dddddd; padding-bottom: 4px; }
+  table.cards { width: 100%; table-layout: fixed; border-collapse: separate; }
+  table.cards td { border: 1px solid #cccccc; padding: 8px 12px; width: 33%; }
+  .card .rotulo { font-size: 11px; color: #666666; }
+  .card .valor { font-size: 16px; font-weight: bold; }
+  .grafico { max-width: 100%; }
+  .historico-insuficiente { color: #666666; font-style: italic; }
+  .causa { font-style: italic; color: #555555; }
+  .recomendacao { border: 1px solid #333333; padding: 10px 14px; font-weight: bold; }
+  .indisponivel { color: #888888; font-style: italic; }
+</style>
+</head>
+<body>
+  <h1>{{ nome_negocio }}</h1>
+  <p class="periodo">Relatório semanal — {{ periodo }}</p>
+
+  <h2>Resumo executivo</h2>
+  {% if resposta_ia %}
+  <p>{{ resposta_ia.resumo_executivo }}</p>
+  {% else %}
+  <p class="indisponivel">Resumo indisponível nesta semana.</p>
+  {% endif %}
+
+  <h2>Números-chave</h2>
+  <table class="cards" cellspacing="6">
+    <tr>
+      <td class="card">
+        <div class="rotulo">Reach total</div>
+        <div class="valor">{{ reach_total }}</div>
+      </td>
+      <td class="card">
+        <div class="rotulo">Engajamento total</div>
+        <div class="valor">{{ engajamento_total }}</div>
+      </td>
+      <td class="card">
+        <div class="rotulo">Taxa de engajamento</div>
+        <div class="valor">{{ taxa_engajamento_semanal }}</div>
+      </td>
+    </tr>
+    <tr>
+      <td class="card">
+        <div class="rotulo">Variação de Reach</div>
+        <div class="valor">{{ variacao_reach_total }}</div>
+      </td>
+      <td class="card">
+        <div class="rotulo">Variação de Engajamento</div>
+        <div class="valor">{{ variacao_engajamento_total }}</div>
+      </td>
+      <td></td>
+    </tr>
+  </table>
+
+  <h2>Evolução do Reach</h2>
+  {% if grafico_base64 %}
+  <img class="grafico" src="data:image/png;base64,{{ grafico_base64 }}">
+  {% else %}
+  <p class="historico-insuficiente">Histórico insuficiente para mostrar evolução — disponível a partir da 2ª semana</p>
+  {% endif %}
+
+  <h2>Destaques</h2>
+  {% if resposta_ia %}
+  <ul>
+    {% for destaque in resposta_ia.destaques %}
+    <li>{{ destaque.descricao }}</li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="indisponivel">Destaques indisponíveis nesta semana.</p>
+  {% endif %}
+
+  {% if resposta_ia and resposta_ia.possivel_causa %}
+  <h2>Possível explicação</h2>
+  <p class="causa">{{ resposta_ia.possivel_causa }}</p>
+  {% elif not resposta_ia %}
+  <h2>Possível explicação</h2>
+  <p class="indisponivel">Indisponível nesta semana.</p>
+  {% endif %}
+
+  <h2>Recomendação</h2>
+  {% if resposta_ia %}
+  <p class="recomendacao">{{ resposta_ia.recomendacao }}</p>
+  {% else %}
+  <p class="recomendacao indisponivel">Recomendação indisponível nesta semana.</p>
+  {% endif %}
+</body>
+</html>

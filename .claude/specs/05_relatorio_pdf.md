@@ -47,3 +47,7 @@ Gera a imagem do gráfico de linha da evolução do Reach total, monta o HTML do
 - Números formatados em padrão pt-BR (separador de milhar)
 - Pasta `relatorios/` é criada automaticamente se não existir
 - **[Correção do `/spec-review`]** `gerador_pdf.py` recebe `resposta_ia: RespostaIA | None` (tipo definido em `04_ia_gemini`) — `None` já é o próprio sinal de indisponibilidade, sem campo ou wrapper intermediário; `watcher.py` passa o retorno de `gerar_interpretacao()` direto, sem tradução
+- Cards de números-chave implementados como `<table>` com `table-layout: fixed`, não `<div>` com `display: inline-block`/`width: %` — o motor xhtml2pdf tem suporte limitado a CSS moderno; `inline-block` quebrava o alinhamento (confirmado gerando um PDF de exemplo e revisando visualmente)
+
+---
+**Status:** concluida em 2026-06-23
