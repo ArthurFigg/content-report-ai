@@ -36,3 +36,7 @@ Envia o PDF do relatório semanal por email, como anexo, para o destinatário co
 - Assunto e corpo do email simples, sem replicar o resumo da IA — só avisa que o PDF está em anexo
 - Erros de configuração ausente falham imediatamente, sem retry — retry é reservado para falhas transitórias de rede/SMTP, não para erro de configuração
 - Reaproveita `src/retry.py` (criado na spec `04_ia_gemini`), não duplica a lógica de backoff
+- `enviar_relatorio(caminho_pdf, periodo)` recebe `periodo` já formatado (string), não o identificador `semana` bruto — evita que `entrega/` importe `relatorio/` para reaproveitar a formatação de data; o pequeno helper de formatação é duplicado (não compartilhado) entre os dois módulos, mantendo o desacoplamento já estabelecido em `05_relatorio_pdf` ("Não mexer")
+
+---
+**Status:** concluida em 2026-06-23
