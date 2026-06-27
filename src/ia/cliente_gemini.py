@@ -1,8 +1,8 @@
 import logging
 import os
 
-from google import genai
-from pydantic import BaseModel
+from groq import Groq
+from pydantic import BaseModel, ValidationError
 
 from src.ia.prompt import montar_prompt
 from src.processamento.calculo_metricas import MetricasSemana
@@ -11,7 +11,7 @@ from src.retry import executar_com_retry
 
 logger = logging.getLogger(__name__)
 
-MODELO_PADRAO = "gemini-3.5-flash"
+MODELO_PADRAO = "llama-3.3-70b-versatile"
 
 
 class RespostaIAInvalidaError(Exception):
@@ -36,28 +36,36 @@ def gerar_interpretacao(
     prompt = montar_prompt(metricas, variacao)
 
     def _chamar_api() -> RespostaIA:
-        client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
-        modelo = os.environ.get("GEMINI_MODEL", MODELO_PADRAO)
-        resposta = client.models.generate_content(
-            model=modelo,
-            contents=prompt,
-            config={
-                "response_mime_type": "application/json",
-                "response_schema": RespostaIA,
-            },
+        client = Groq(api_key=os.environ["GROQ_API_KEY"])
+        modelo = os.environ.get("GROQ_MODEL", MODELO_PADRAO)
+        schema_instrucao = (
+            "Responda SOMENTE com um objeto JSON válido, sem texto adicional, "
+            "usando exatamente estas chaves:\n"
+            '{"resumo_executivo": "string", '
+            '"destaques": [{"tipo": "string", "descricao": "string"}], '
+            '"possivel_causa": "string ou null", '
+            '"recomendacao": "string"}'
         )
-        if resposta.parsed is None:
+        completion = client.chat.completions.create(
+            model=modelo,
+            messages=[
+                {"role": "system", "content": schema_instrucao},
+                {"role": "user", "content": prompt},
+            ],
+            response_format={"type": "json_object"},
+        )
+        conteudo = completion.choices[0].message.content
+        try:
+            return RespostaIA.model_validate_json(conteudo)
+        except ValidationError as e:
             raise RespostaIAInvalidaError(
-                "Gemini retornou resposta que não valida contra o schema"
-            )
-        return resposta.parsed
+                f"Resposta não valida contra o schema: {e}"
+            ) from e
 
     try:
         resultado = executar_com_retry(_chamar_api)
     except Exception:
-        logger.error(
-            "Falha persistente ao gerar interpretação com a Gemini", exc_info=True
-        )
+        logger.error("Falha persistente ao gerar interpretação com a IA", exc_info=True)
         return None
 
     if not variacao.tem_historico:

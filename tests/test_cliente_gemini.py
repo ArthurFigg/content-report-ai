@@ -27,17 +27,21 @@ def _resposta_ia_exemplo(possivel_causa: str | None = None) -> RespostaIA:
     )
 
 
+def _completion_mock(conteudo: str) -> Mock:
+    return Mock(choices=[Mock(message=Mock(content=conteudo))])
+
+
 def _mock_client(monkeypatch, respostas: list):
     client_mock = Mock()
-    client_mock.models.generate_content = Mock(side_effect=respostas)
-    monkeypatch.setattr("src.ia.cliente_gemini.genai.Client", Mock(return_value=client_mock))
-    monkeypatch.setenv("GEMINI_API_KEY", "fake-key")
+    client_mock.chat.completions.create = Mock(side_effect=respostas)
+    monkeypatch.setattr("src.ia.cliente_gemini.Groq", Mock(return_value=client_mock))
+    monkeypatch.setenv("GROQ_API_KEY", "fake-key")
     monkeypatch.setattr("src.retry.time.sleep", Mock())
 
 
 def test_gerar_interpretacao_retorna_resposta_com_historico(monkeypatch):
     resposta_esperada = _resposta_ia_exemplo(possivel_causa="queda no número de posts")
-    _mock_client(monkeypatch, [Mock(parsed=resposta_esperada)])
+    _mock_client(monkeypatch, [_completion_mock(resposta_esperada.model_dump_json())])
     variacao = VariacaoSemana(
         tem_historico=True, variacao_reach_total=10.0, variacao_engajamento_total=5.0
     )
@@ -49,7 +53,7 @@ def test_gerar_interpretacao_retorna_resposta_com_historico(monkeypatch):
 
 def test_gerar_interpretacao_forca_possivel_causa_none_sem_historico(monkeypatch):
     resposta_da_ia = _resposta_ia_exemplo(possivel_causa="causa inventada pela IA")
-    _mock_client(monkeypatch, [Mock(parsed=resposta_da_ia)])
+    _mock_client(monkeypatch, [_completion_mock(resposta_da_ia.model_dump_json())])
     variacao = VariacaoSemana(
         tem_historico=False, variacao_reach_total=None, variacao_engajamento_total=None
     )
@@ -63,7 +67,7 @@ def test_gerar_interpretacao_tenta_novamente_apos_falha(monkeypatch):
     resposta_esperada = _resposta_ia_exemplo()
     _mock_client(
         monkeypatch,
-        [Exception("erro de rede"), Exception("erro de rede"), Mock(parsed=resposta_esperada)],
+        [Exception("erro de rede"), Exception("erro de rede"), _completion_mock(resposta_esperada.model_dump_json())],
     )
     variacao = VariacaoSemana(
         tem_historico=True, variacao_reach_total=1.0, variacao_engajamento_total=1.0
@@ -87,7 +91,13 @@ def test_gerar_interpretacao_retorna_none_apos_falhas_persistentes(monkeypatch):
 
 def test_gerar_interpretacao_trata_resposta_invalida_como_falha_de_tentativa(monkeypatch):
     resposta_esperada = _resposta_ia_exemplo()
-    _mock_client(monkeypatch, [Mock(parsed=None), Mock(parsed=resposta_esperada)])
+    _mock_client(
+        monkeypatch,
+        [
+            _completion_mock('{"campo_errado": "valor"}'),
+            _completion_mock(resposta_esperada.model_dump_json()),
+        ],
+    )
     variacao = VariacaoSemana(
         tem_historico=True, variacao_reach_total=1.0, variacao_engajamento_total=1.0
     )

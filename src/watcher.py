@@ -3,6 +3,10 @@ import os
 import re
 import time
 from datetime import date, timedelta
+
+from dotenv import load_dotenv
+
+load_dotenv()
 from pathlib import Path
 
 from sqlalchemy import Engine
@@ -32,8 +36,7 @@ DIRETORIO_ENTRADA = Path("dados/entrada")
 DIRETORIO_PROCESSADOS = Path("dados/processados")
 PADRAO_NOME_ARQUIVO = re.compile(r"^semana_(\d{4}-\d{2}-\d{2})\.csv$")
 VARIAVEIS_OBRIGATORIAS = (
-    "GEMINI_API_KEY",
-    "GEMINI_MODEL",
+    "GROQ_API_KEY",
     "SMTP_USER",
     "SMTP_PASSWORD",
     "EMAIL_DESTINATARIO",
