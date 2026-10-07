@@ -35,7 +35,7 @@ def enviar_relatorio(caminho_pdf: str, periodo: str) -> bool:
     try:
         executar_com_retry(_enviar)
     except Exception:
-        logger.error("Falha persistente ao enviar o relatório por email", exc_info=True)
+        logger.exception("Falha persistente ao enviar o relatório por email")
         return False
 
     return True

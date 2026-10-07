@@ -1,14 +1,10 @@
 import logging
 import time
 from collections.abc import Callable
-from typing import TypeVar
 
 logger = logging.getLogger(__name__)
 
-T = TypeVar("T")
-
-
-def executar_com_retry(
+def executar_com_retry[T](
     funcao: Callable[[], T],
     tentativas: int = 3,
     delays: tuple[float, ...] = (2, 4, 8),
@@ -18,7 +14,8 @@ def executar_com_retry(
     for numero_tentativa in range(1, tentativas + 1):
         try:
             return funcao()
-        except Exception as erro:
+        # Qualquer erro conta como falha da tentativa; o último sobe no fim.
+        except Exception as erro:  # noqa: BLE001
             ultimo_erro = erro
             if numero_tentativa < tentativas:
                 delay = delays[numero_tentativa - 1]

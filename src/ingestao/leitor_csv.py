@@ -98,7 +98,7 @@ def _validar_post_id_unico(posts: list[PostValidado]) -> None:
 
 def _parse_data(valor: str, numero_linha: int) -> date:
     try:
-        return datetime.strptime(valor, "%Y-%m-%d").date()
+        return datetime.strptime(valor, "%Y-%m-%d").date()  # noqa: DTZ007 — só data, sem hora
     except ValueError as erro:
         raise CSVInvalidoError(f"Post Date inválida na linha {numero_linha}: {valor!r}") from erro
 

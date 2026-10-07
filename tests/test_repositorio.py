@@ -5,7 +5,13 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from src.persistencia.modelos import DadosPost, Post, ResumoSemanal, criar_engine, criar_tabelas
+from src.persistencia.modelos import (
+    DadosPost,
+    Post,
+    ResumoSemanal,
+    criar_engine,
+    criar_tabelas,
+)
 from src.persistencia.repositorio import (
     buscar_resumo_anterior,
     buscar_ultimos_resumos,

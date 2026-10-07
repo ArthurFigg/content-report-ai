@@ -18,7 +18,12 @@ from src.entrega.email_sender import enviar_relatorio
 from src.ia.cliente_gemini import gerar_interpretacao
 from src.ingestao.excecoes import CSVInvalidoError
 from src.ingestao.leitor_csv import PostValidado, ler_csv
-from src.persistencia.modelos import DadosPost, ResumoSemanal, criar_engine, criar_tabelas
+from src.persistencia.modelos import (
+    DadosPost,
+    ResumoSemanal,
+    criar_engine,
+    criar_tabelas,
+)
 from src.persistencia.repositorio import (
     buscar_resumo_anterior,
     inserir_posts,
@@ -26,7 +31,10 @@ from src.persistencia.repositorio import (
     salvar_resumo_semanal,
     semana_ja_processada,
 )
-from src.processamento.calculo_metricas import calcular_metricas_semana, calcular_taxa_engajamento
+from src.processamento.calculo_metricas import (
+    calcular_metricas_semana,
+    calcular_taxa_engajamento,
+)
 from src.processamento.comparacao import TotaisAnteriores, calcular_variacao
 from src.relatorio.gerador_pdf import gerar_pdf
 
@@ -83,7 +91,7 @@ def processar_arquivo(caminho: Path, engine: Engine) -> None:
         logger.warning("Semana já processada — arquivo %s ignorado", caminho.name)
         return
     except Exception:
-        logger.error("Falha não prevista ao processar %s", caminho.name, exc_info=True)
+        logger.exception("Falha não prevista ao processar %s", caminho.name)
         return
 
     _mover_para_processados(caminho)

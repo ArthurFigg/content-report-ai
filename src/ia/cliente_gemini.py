@@ -65,7 +65,7 @@ def gerar_interpretacao(
     try:
         resultado = executar_com_retry(_chamar_api)
     except Exception:
-        logger.error("Falha persistente ao gerar interpretação com a IA", exc_info=True)
+        logger.exception("Falha persistente ao gerar interpretação com a IA")
         return None
 
     if not variacao.tem_historico:

@@ -181,7 +181,7 @@ def escrever_csv(caminho: Path, linhas: list[dict]) -> None:
 
 
 def main() -> None:
-    hoje = date.today()
+    hoje = date.today()  # noqa: DTZ011 — data local, ferramenta descartável
     semanas = segundas_feiras_recentes(hoje)
     semana_viral = random.choice(semanas)
     crescimento_acumulado = random.uniform(
