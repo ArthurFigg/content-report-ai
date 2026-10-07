@@ -29,10 +29,10 @@ Compara o Reach total e o Engajamento total da semana atual com a média das úl
 - QUANDO houver mais semanas salvas que a quantidade pedida, o repositorio DEVE devolver em `buscar_ultimos_resumos` só as de maior `semana`, da maior para a menor.
 
 ## Interfaces públicas
-- `calcular_tendencia(reach_total_atual, engajamento_total_atual, historico) -> TendenciaSemana`
-- `buscar_ultimos_resumos(sessao, quantidade) -> list[ResumoSemanal]`
-- `TendenciaSemana` — campos `tem_historico`, `semanas_usadas`, `media_reach_total`, `media_engajamento_total`, `variacao_reach_total`, `variacao_engajamento_total`
-- `JANELA_TENDENCIA` — constante, valor 4
+- `calcular_tendencia(reach_total_atual, engajamento_total_atual, historico) -> TendenciaSemana` — em `src/processamento/tendencia.py`
+- `buscar_ultimos_resumos(sessao, quantidade) -> list[ResumoSemanal]` — em `src/persistencia/repositorio.py`
+- `TendenciaSemana` — campos `tem_historico`, `semanas_usadas`, `media_reach_total`, `media_engajamento_total`, `variacao_reach_total`, `variacao_engajamento_total` — em `src/processamento/tendencia.py`
+- `JANELA_TENDENCIA` — constante, valor 4 — em `src/processamento/tendencia.py`
 
 ## Usa de outras specs
 - `TotaisAnteriores` (03_ingestao_e_metricas)

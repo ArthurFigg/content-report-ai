@@ -26,15 +26,15 @@ Define o esquema do banco SQLite (tabelas `posts` e `resumos_semanais`) e a cama
 
 ## Interfaces públicas
 <!-- [Conversão para o formato novo, 2026-10-07] — copiado do código atual -->
-- `inserir_posts(sessao, posts, semana) -> None`
-- `buscar_resumo_anterior(sessao) -> ResumoSemanal | None`
-- `semana_ja_processada(sessao, semana) -> bool`
-- `salvar_resumo_semanal(sessao, semana, reach_total, engajamento_total, taxa_engajamento_semanal, quantidade_posts, melhor_post_id, pior_post_id) -> None`
-- `listar_resumos_semanais(sessao) -> list[tuple[str, int]]`
-- `criar_engine(caminho_banco) -> Engine`
-- `criar_tabelas(engine) -> None`
-- `ResumoSemanal` — campos `semana`, `reach_total`, `engajamento_total`, `taxa_engajamento_semanal`, `quantidade_posts`, `melhor_post_id`, `pior_post_id`
-- `DadosPost` — campos do CSV (ver CLAUDE.md) + `taxa_engajamento`
+- `inserir_posts(sessao, posts, semana) -> None` — em `src/persistencia/repositorio.py`
+- `buscar_resumo_anterior(sessao) -> ResumoSemanal | None` — em `src/persistencia/repositorio.py`
+- `semana_ja_processada(sessao, semana) -> bool` — em `src/persistencia/repositorio.py`
+- `salvar_resumo_semanal(sessao, semana, reach_total, engajamento_total, taxa_engajamento_semanal, quantidade_posts, melhor_post_id, pior_post_id) -> None` — em `src/persistencia/repositorio.py`
+- `listar_resumos_semanais(sessao) -> list[tuple[str, int]]` — em `src/persistencia/repositorio.py`
+- `criar_engine(caminho_banco) -> Engine` — em `src/persistencia/modelos.py`
+- `criar_tabelas(engine) -> None` — em `src/persistencia/modelos.py`
+- `ResumoSemanal` — campos `semana`, `reach_total`, `engajamento_total`, `taxa_engajamento_semanal`, `quantidade_posts`, `melhor_post_id`, `pior_post_id` — em `src/persistencia/modelos.py`
+- `DadosPost` — campos do CSV (ver CLAUDE.md) + `taxa_engajamento` — em `src/persistencia/modelos.py`
 
 ## Usa de outras specs
 - nenhuma

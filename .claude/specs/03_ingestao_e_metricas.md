@@ -26,16 +26,16 @@ Lê e valida um CSV semanal, calcula as métricas determinísticas da semana (to
 
 ## Interfaces públicas
 <!-- [Conversão para o formato novo, 2026-10-07] — copiado do código atual -->
-- `ler_csv(caminho) -> list[PostValidado]`
-- `calcular_metricas_semana(posts) -> MetricasSemana`
-- `calcular_taxa_engajamento(engajamento, reach) -> float`
-- `calcular_variacao(reach_total_atual, engajamento_total_atual, totais_anteriores) -> VariacaoSemana`
-- `CSVInvalidoError` — exceção de CSV inválido
-- `PostValidado` — campos do CSV (ver CLAUDE.md)
-- `PostResumo` — campos `post_id`, `post_type`, `reach`, `taxa_engajamento`
-- `MetricasSemana` — campos `reach_total`, `engajamento_total`, `taxa_engajamento_semanal`, `quantidade_posts`, `melhor_post`, `pior_post`, `melhor_taxa_engajamento_post`
-- `TotaisAnteriores` — campos `reach_total`, `engajamento_total`
-- `VariacaoSemana` — campos `tem_historico`, `variacao_reach_total`, `variacao_engajamento_total`
+- `ler_csv(caminho) -> list[PostValidado]` — em `src/ingestao/leitor_csv.py`
+- `calcular_metricas_semana(posts) -> MetricasSemana` — em `src/processamento/calculo_metricas.py`
+- `calcular_taxa_engajamento(engajamento, reach) -> float` — em `src/processamento/calculo_metricas.py`
+- `calcular_variacao(reach_total_atual, engajamento_total_atual, totais_anteriores) -> VariacaoSemana` — em `src/processamento/comparacao.py`
+- `CSVInvalidoError` — exceção de CSV inválido — em `src/ingestao/excecoes.py`
+- `PostValidado` — campos do CSV (ver CLAUDE.md) — em `src/ingestao/leitor_csv.py`
+- `PostResumo` — campos `post_id`, `post_type`, `reach`, `taxa_engajamento` — em `src/processamento/calculo_metricas.py`
+- `MetricasSemana` — campos `reach_total`, `engajamento_total`, `taxa_engajamento_semanal`, `quantidade_posts`, `melhor_post`, `pior_post`, `melhor_taxa_engajamento_post` — em `src/processamento/calculo_metricas.py`
+- `TotaisAnteriores` — campos `reach_total`, `engajamento_total` — em `src/processamento/comparacao.py`
+- `VariacaoSemana` — campos `tem_historico`, `variacao_reach_total`, `variacao_engajamento_total` — em `src/processamento/comparacao.py`
 
 ## Usa de outras specs
 - nenhuma
