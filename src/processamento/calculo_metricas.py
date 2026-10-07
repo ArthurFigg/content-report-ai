@@ -24,6 +24,14 @@ class MetricasSemana:
     melhor_taxa_engajamento_post: PostResumo
 
 
+@dataclass(frozen=True)
+class MetricasPorTipo:
+    post_type: str
+    quantidade_posts: int
+    reach_medio: float
+    taxa_engajamento: float
+
+
 def calcular_taxa_engajamento(engajamento: float, reach: float) -> float:
     if reach == 0:
         return 0.0
@@ -72,3 +80,39 @@ def _linha_para_resumo(linha: pd.Series) -> PostResumo:
         reach=int(linha["reach"]),
         taxa_engajamento=float(linha["taxa_engajamento"]),
     )
+
+
+def calcular_metricas_por_tipo(posts: list[PostValidado]) -> list[MetricasPorTipo]:
+    if not posts:
+        return []
+
+    grupos: dict[str, list[PostValidado]] = {}
+    for post in posts:
+        grupos.setdefault(post.post_type, []).append(post)
+
+    metricas = [
+        _calcular_metricas_de_um_tipo(tipo, posts_do_tipo)
+        for tipo, posts_do_tipo in grupos.items()
+    ]
+    return sorted(metricas, key=lambda item: (-item.reach_medio, item.post_type))
+
+
+def _calcular_metricas_de_um_tipo(
+    tipo: str, posts_do_tipo: list[PostValidado]
+) -> MetricasPorTipo:
+    reach_total = sum(post.reach for post in posts_do_tipo)
+    engajamento_total = sum(
+        post.likes_and_reactions + post.comments + post.shares + post.saves
+        for post in posts_do_tipo
+    )
+    quantidade = len(posts_do_tipo)
+    reach_medio = reach_total / quantidade
+    taxa = calcular_taxa_engajamento(engajamento_total, reach_total)
+
+    return MetricasPorTipo(
+        post_type=tipo,
+        quantidade_posts=quantidade,
+        reach_medio=reach_medio,
+        taxa_engajamento=taxa,
+    )
+

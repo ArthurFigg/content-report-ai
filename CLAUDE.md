@@ -56,7 +56,7 @@ relatorio_conteudo/
 │   │   └── leitor_csv.py     # lê e valida o CSV no formato Meta Business Suite
 │   ├── processamento/
 │   │   ├── __init__.py
-│   │   ├── calculo_metricas.py   # totais, médias, melhor/pior post (pandas)
+│   │   ├── calculo_metricas.py   # totais, médias, melhor/pior post, desempenho por tipo de post
 │   │   ├── comparacao.py         # variação semana atual vs. anterior
 │   │   └── tendencia.py          # variação semana atual vs. média das últimas 4
 │   ├── persistencia/

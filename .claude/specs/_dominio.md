@@ -14,6 +14,7 @@
 - **Melhor post / pior post** — `melhor_post`, `pior_post`: maior e menor Reach da semana.
 - **Melhor taxa** — `melhor_taxa_engajamento_post`: maior `taxa_engajamento` da semana.
 - **Variação** — diferença percentual contra a semana anterior: `tem_historico`, `variacao_reach_total`, `variacao_engajamento_total`.
+- **Desempenho por tipo** — métricas separadas por `post_type`: `quantidade_posts`, `reach_medio`, `taxa_engajamento`.
 - **Tendência** — diferença percentual contra a média das últimas semanas: `semanas_usadas`, `media_reach_total`, `media_engajamento_total`.
 - Evitar: "alcance" no código (usar `reach`), "engajamento bruto" (usar `engajamento_total`).
 
