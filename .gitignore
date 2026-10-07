@@ -13,3 +13,6 @@ logs/*.log
 relatorios/*.pdf
 dados/entrada/*.csv
 dados/processados/*.csv
+
+# gerado pelo /implementar
+.claude/specs/_expandidas/

@@ -17,6 +17,29 @@ Lê e valida um CSV semanal, calcula as métricas determinísticas da semana (to
 - Se o valor da métrica na semana anterior for 0, a variação percentual daquela métrica específica é `null` (sem base de comparação válida), mesmo havendo histórico de outras métricas.
 - `comparacao.py` é uma função pura — não acessa o banco diretamente; recebe os dois conjuntos de totais já calculados/buscados por quem o chama (orquestração é responsabilidade do `watcher.py`, spec futura).
 
+## Regras
+<!-- [Conversão para o formato novo, 2026-10-07] -->
+- QUANDO o CSV falhar em qualquer validação, o leitor_csv DEVE levantar `CSVInvalidoError` dizendo o problema.
+- QUANDO o Reach de um post for 0, o calculo_metricas DEVE usar taxa de engajamento 0.
+- QUANDO não houver resumo anterior, a comparacao DEVE devolver `tem_historico` falso e as duas variações `None`.
+- QUANDO o valor anterior de uma métrica for 0, a comparacao DEVE devolver `None` como variação dessa métrica.
+
+## Interfaces públicas
+<!-- [Conversão para o formato novo, 2026-10-07] — copiado do código atual -->
+- `ler_csv(caminho) -> list[PostValidado]`
+- `calcular_metricas_semana(posts) -> MetricasSemana`
+- `calcular_taxa_engajamento(engajamento, reach) -> float`
+- `calcular_variacao(reach_total_atual, engajamento_total_atual, totais_anteriores) -> VariacaoSemana`
+- `CSVInvalidoError` — exceção de CSV inválido
+- `PostValidado` — campos do CSV (ver CLAUDE.md)
+- `PostResumo` — campos `post_id`, `post_type`, `reach`, `taxa_engajamento`
+- `MetricasSemana` — campos `reach_total`, `engajamento_total`, `taxa_engajamento_semanal`, `quantidade_posts`, `melhor_post`, `pior_post`, `melhor_taxa_engajamento_post`
+- `TotaisAnteriores` — campos `reach_total`, `engajamento_total`
+- `VariacaoSemana` — campos `tem_historico`, `variacao_reach_total`, `variacao_engajamento_total`
+
+## Usa de outras specs
+- nenhuma
+
 ## Critérios verificáveis
 - [ ] `uv run pytest tests/test_leitor_csv.py -v` passa
 - [ ] `uv run pytest tests/test_calculo_metricas.py -v` passa
@@ -54,6 +77,8 @@ Lê e valida um CSV semanal, calcula as métricas determinísticas da semana (to
 - **[Correção do `/spec-review`]** Adicionada dependência de `02_gerador_dados_sinteticos` — `leitor_csv.py` assume o formato de CSV (vírgula, datas ISO) definido naquela spec
 - `leitor_csv.py` produz `PostValidado` (dataclass próprio de `ingestao/`), não o `DadosPost` de `persistencia/modelos.py` — mantém ingestão e persistência desacopladas; a adaptação entre os dois formatos é responsabilidade do `watcher.py` (spec `07_watcher`)
 - `comparacao.py` recebe `TotaisAnteriores` (dataclass próprio, só com `reach_total`/`engajamento_total`), não o `ResumoSemanal` de `persistencia/modelos.py` — pelo mesmo motivo: função pura sem depender do schema do banco
+
+- **[Conversão para o formato novo, 2026-10-07]** Acrescentadas Regras, Interfaces públicas e Usa de outras specs, copiadas do código atual.
 
 ---
 **Status:** concluida em 2026-06-22

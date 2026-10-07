@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from src.persistencia.modelos import DadosPost, Post, ResumoSemanal, criar_engine, criar_tabelas
 from src.persistencia.repositorio import (
     buscar_resumo_anterior,
+    buscar_ultimos_resumos,
     inserir_posts,
     listar_resumos_semanais,
     salvar_resumo_semanal,
@@ -199,3 +200,62 @@ def test_salvar_resumo_semanal_duplicado_levanta_erro_de_integridade(sessao):
             melhor_post_id="p1",
             pior_post_id="p1",
         )
+
+
+def _salvar_semanas(sessao: Session, semanas: list[str]) -> None:
+    for indice, semana in enumerate(semanas):
+        post_id = f"p{indice}"
+        _inserir_post_simples(sessao, post_id, semana)
+        salvar_resumo_semanal(
+            sessao,
+            semana=semana,
+            reach_total=1000 + indice,
+            engajamento_total=100,
+            taxa_engajamento_semanal=10.0,
+            quantidade_posts=1,
+            melhor_post_id=post_id,
+            pior_post_id=post_id,
+        )
+
+
+SEIS_SEMANAS = [
+    "2026-06-08",
+    "2026-06-01",
+    "2026-06-22",
+    "2026-06-15",
+    "2026-07-06",
+    "2026-06-29",
+]
+
+
+def test_buscar_ultimos_resumos_retorna_lista_vazia_com_tabela_vazia(sessao):
+    assert buscar_ultimos_resumos(sessao, 4) == []
+
+
+def test_buscar_ultimos_resumos_retorna_as_quatro_mais_recentes_da_maior_para_a_menor(
+    sessao,
+):
+    _salvar_semanas(sessao, SEIS_SEMANAS)
+
+    resumos = buscar_ultimos_resumos(sessao, 4)
+
+    assert [resumo.semana for resumo in resumos] == [
+        "2026-07-06",
+        "2026-06-29",
+        "2026-06-22",
+        "2026-06-15",
+    ]
+
+
+def test_buscar_ultimos_resumos_retorna_todas_quando_ha_menos_que_a_quantidade(sessao):
+    _salvar_semanas(sessao, ["2026-06-01", "2026-06-08"])
+
+    resumos = buscar_ultimos_resumos(sessao, 4)
+
+    assert [resumo.semana for resumo in resumos] == ["2026-06-08", "2026-06-01"]
+
+
+def test_buscar_ultimos_resumos_retorna_lista_vazia_com_quantidade_zero(sessao):
+    _salvar_semanas(sessao, ["2026-06-01", "2026-06-08"])
+
+    assert buscar_ultimos_resumos(sessao, 0) == []

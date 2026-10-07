@@ -57,7 +57,8 @@ relatorio_conteudo/
 │   ├── processamento/
 │   │   ├── __init__.py
 │   │   ├── calculo_metricas.py   # totais, médias, melhor/pior post (pandas)
-│   │   └── comparacao.py         # variação semana atual vs. anterior
+│   │   ├── comparacao.py         # variação semana atual vs. anterior
+│   │   └── tendencia.py          # variação semana atual vs. média das últimas 4
 │   ├── persistencia/
 │   │   ├── __init__.py
 │   │   ├── modelos.py         # esquema das tabelas posts / resumos_semanais
@@ -81,6 +82,7 @@ relatorio_conteudo/
 │   ├── test_leitor_csv.py
 │   ├── test_calculo_metricas.py
 │   ├── test_comparacao.py
+│   ├── test_tendencia.py
 │   ├── test_repositorio.py
 │   ├── test_gerador_pdf.py
 │   ├── test_cliente_gemini.py   # mocka a chamada à API Gemini (payload enviado, parsing do retorno, retry/falha)
@@ -156,7 +158,7 @@ O post com a maior `taxa_engajamento` da semana é identificado por `calculo_met
 
 A variação percentual (semana atual vs. anterior) é calculada apenas para **Reach total** e **Engajamento total**. A taxa de engajamento semanal não tem variação própria — é derivada das outras duas, então uma terceira variação seria redundante.
 
-`repositorio.listar_resumos_semanais()` retorna todas as semanas já salvas (`semana`, `reach_total`), ordenadas — usada por `grafico.py` para montar a evolução de múltiplas semanas (diferente de `buscar_resumo_anterior()`, que retorna só a mais recente).
+`repositorio.listar_resumos_semanais()` retorna todas as semanas já salvas (`semana`, `reach_total`), ordenadas — usada por `grafico.py` para montar a evolução de múltiplas semanas (diferente de `buscar_resumo_anterior()`, que retorna só a mais recente). `repositorio.buscar_ultimos_resumos(sessao, quantidade)` devolve os resumos mais recentes, do mais novo para o mais antigo — base da tendência contra a média das últimas 4 semanas (`tendencia.py`).
 
 **Atomicidade**: a inserção dos posts (`inserir_posts`) e o salvamento do resumo semanal (`salvar_resumo_semanal`) ocorrem dentro de uma única transação de banco, que só abre **depois** que a chamada à IA (com todos os retries) já terminou — nunca durante a chamada de rede externa. Se qualquer exceção ocorrer entre as duas operações, a transação é revertida por completo: nenhum post nem resumo daquela semana fica persistido, evitando posts "órfãos" sem resumo correspondente em caso de falha no meio do processamento.
 

@@ -49,3 +49,15 @@ def listar_resumos_semanais(sessao: Session) -> list[tuple[str, int]]:
         ResumoSemanal.semana
     )
     return [(semana, reach_total) for semana, reach_total in sessao.execute(instrucao).all()]
+
+
+def buscar_ultimos_resumos(sessao: Session, quantidade: int) -> list[ResumoSemanal]:
+    if quantidade < 1:
+        return []
+    instrucao = (
+        select(ResumoSemanal)
+        .order_by(ResumoSemanal.semana.desc())
+        .limit(quantidade)
+    )
+    return list(sessao.execute(instrucao).scalars().all())
+
